@@ -1,3 +1,5 @@
+use crate::binary_decision_diagram::BinaryIndex;
+
 pub unsafe fn allocate<T>() -> *mut T {
     std::alloc::alloc(std::alloc::Layout::new::<T>()) as *mut T
 }
