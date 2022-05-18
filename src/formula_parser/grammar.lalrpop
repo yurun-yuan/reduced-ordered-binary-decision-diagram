@@ -39,5 +39,5 @@ Constant: ParserNode<String> = {
 }
 
 Indent: String = {
-    <i: r"[a-zA-Z]+"> => String::from(i),
+    <i: r"[a-zA-Z0-9]+"> => String::from(i),
 }

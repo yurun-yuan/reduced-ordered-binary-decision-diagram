@@ -1,12 +1,12 @@
 // auto-generated: "lalrpop 0.19.8"
-// sha3: 7b93cb12b6661c292ba7087b52d480c1d272c21519018a17004bea0e48687205
+// sha3: dd30da1abca12235d37625aab0a55cec1832708e8b7df75288a695a26672f32c
 use crate::formula_parser::*;
 #[allow(unused_extern_crates)]
 extern crate lalrpop_util as __lalrpop_util;
 #[allow(unused_imports)]
 use self::__lalrpop_util::state_machine as __state_machine;
-extern crate alloc;
 extern crate core;
+extern crate alloc;
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 mod __parse__Formula {
@@ -172,7 +172,7 @@ mod __parse__Formula {
             r###""F""###,
             r###""T""###,
             r###""|""###,
-            r###"r#"[a-zA-Z]+"#"###,
+            r###"r#"[a-zA-Z0-9]+"#"###,
         ];
         __TERMINAL.iter().enumerate().filter_map(|(index, terminal)| {
             let next_state = __action(__state, index);
@@ -617,7 +617,7 @@ mod __parse__Formula {
         _: core::marker::PhantomData<(&'input ())>,
     ) -> (usize, usize)
     {
-        // Indent = r#"[a-zA-Z]+"# => ActionFn(16);
+        // Indent = r#"[a-zA-Z0-9]+"# => ActionFn(16);
         let __sym0 = __pop_Variant0(__symbols);
         let __start = __sym0.0.clone();
         let __end = __sym0.2.clone();
@@ -766,7 +766,7 @@ mod __intern_token {
     extern crate alloc;
     pub fn new_builder() -> __lalrpop_util::lexer::MatcherBuilder {
         let __strs: &[(&str, bool)] = &[
-            ("^([A-Za-z]+)", false),
+            ("^([0-9A-Za-z]+)", false),
             ("^(!)", false),
             ("^(\\&)", false),
             ("^(\\()", false),
@@ -784,172 +784,217 @@ mod __intern_token {
 pub(crate) use self::__lalrpop_util::lexer::Token;
 
 #[allow(unused_variables)]
-fn __action0<'input>(
+fn __action0<
+    'input,
+>(
     input: &'input str,
     (_, __0, _): (usize, ParserNode<String>, usize),
-) -> ParserNode<String> {
+) -> ParserNode<String>
+{
     __0
 }
 
 #[allow(unused_variables)]
-fn __action1<'input>(
+fn __action1<
+    'input,
+>(
     input: &'input str,
     (_, __0, _): (usize, ParserNode<String>, usize),
-) -> ParserNode<String> {
+) -> ParserNode<String>
+{
     __0
 }
 
 #[allow(unused_variables)]
-fn __action2<'input>(
+fn __action2<
+    'input,
+>(
     input: &'input str,
     (_, l, _): (usize, ParserNode<String>, usize),
     (_, _, _): (usize, &'input str, usize),
     (_, r, _): (usize, ParserNode<String>, usize),
-) -> ParserNode<String> {
+) -> ParserNode<String>
+{
     ParserNode::Binary(BinaryOperation::Implication, (Box::new(l), Box::new(r)))
 }
 
 #[allow(unused_variables)]
-fn __action3<'input>(
+fn __action3<
+    'input,
+>(
     input: &'input str,
     (_, l, _): (usize, ParserNode<String>, usize),
     (_, _, _): (usize, &'input str, usize),
     (_, r, _): (usize, ParserNode<String>, usize),
-) -> ParserNode<String> {
+) -> ParserNode<String>
+{
     ParserNode::Binary(BinaryOperation::Equivalence, (Box::new(l), Box::new(r)))
 }
 
 #[allow(unused_variables)]
-fn __action4<'input>(
+fn __action4<
+    'input,
+>(
     input: &'input str,
     (_, __0, _): (usize, ParserNode<String>, usize),
-) -> ParserNode<String> {
+) -> ParserNode<String>
+{
     __0
 }
 
 #[allow(unused_variables)]
-fn __action5<'input>(
+fn __action5<
+    'input,
+>(
     input: &'input str,
     (_, l, _): (usize, ParserNode<String>, usize),
     (_, _, _): (usize, &'input str, usize),
     (_, r, _): (usize, ParserNode<String>, usize),
-) -> ParserNode<String> {
+) -> ParserNode<String>
+{
     ParserNode::Binary(BinaryOperation::Or, (Box::new(l), Box::new(r)))
 }
 
 #[allow(unused_variables)]
-fn __action6<'input>(
+fn __action6<
+    'input,
+>(
     input: &'input str,
     (_, __0, _): (usize, ParserNode<String>, usize),
-) -> ParserNode<String> {
+) -> ParserNode<String>
+{
     __0
 }
 
 #[allow(unused_variables)]
-fn __action7<'input>(
+fn __action7<
+    'input,
+>(
     input: &'input str,
     (_, l, _): (usize, ParserNode<String>, usize),
     (_, _, _): (usize, &'input str, usize),
     (_, r, _): (usize, ParserNode<String>, usize),
-) -> ParserNode<String> {
+) -> ParserNode<String>
+{
     ParserNode::Binary(BinaryOperation::And, (Box::new(l), Box::new(r)))
 }
 
 #[allow(unused_variables)]
-fn __action8<'input>(
+fn __action8<
+    'input,
+>(
     input: &'input str,
     (_, __0, _): (usize, ParserNode<String>, usize),
-) -> ParserNode<String> {
+) -> ParserNode<String>
+{
     __0
 }
 
 #[allow(unused_variables)]
-fn __action9<'input>(
+fn __action9<
+    'input,
+>(
     input: &'input str,
     (_, _, _): (usize, &'input str, usize),
     (_, operand, _): (usize, ParserNode<String>, usize),
-) -> ParserNode<String> {
+) -> ParserNode<String>
+{
     ParserNode::Unary(UnaryOperation::Not, Box::new(operand))
 }
 
 #[allow(unused_variables)]
-fn __action10<'input>(
+fn __action10<
+    'input,
+>(
     input: &'input str,
     (_, __0, _): (usize, ParserNode<String>, usize),
-) -> ParserNode<String> {
+) -> ParserNode<String>
+{
     __0
 }
 
 #[allow(unused_variables)]
-fn __action11<'input>(input: &'input str, (_, i, _): (usize, String, usize)) -> ParserNode<String> {
+fn __action11<
+    'input,
+>(
+    input: &'input str,
+    (_, i, _): (usize, String, usize),
+) -> ParserNode<String>
+{
     ParserNode::Variable(i)
 }
 
 #[allow(unused_variables)]
-fn __action12<'input>(
+fn __action12<
+    'input,
+>(
     input: &'input str,
     (_, __0, _): (usize, ParserNode<String>, usize),
-) -> ParserNode<String> {
+) -> ParserNode<String>
+{
     __0
 }
 
 #[allow(unused_variables)]
-fn __action13<'input>(
+fn __action13<
+    'input,
+>(
     input: &'input str,
     (_, _, _): (usize, &'input str, usize),
     (_, f, _): (usize, ParserNode<String>, usize),
     (_, _, _): (usize, &'input str, usize),
-) -> ParserNode<String> {
+) -> ParserNode<String>
+{
     f
 }
 
 #[allow(unused_variables)]
-fn __action14<'input>(
+fn __action14<
+    'input,
+>(
     input: &'input str,
     (_, t, _): (usize, &'input str, usize),
-) -> ParserNode<String> {
+) -> ParserNode<String>
+{
     ParserNode::Leaf(true)
 }
 
 #[allow(unused_variables)]
-fn __action15<'input>(
+fn __action15<
+    'input,
+>(
     input: &'input str,
     (_, f, _): (usize, &'input str, usize),
-) -> ParserNode<String> {
+) -> ParserNode<String>
+{
     ParserNode::Leaf(false)
 }
 
 #[allow(unused_variables)]
-fn __action16<'input>(input: &'input str, (_, i, _): (usize, &'input str, usize)) -> String {
+fn __action16<
+    'input,
+>(
+    input: &'input str,
+    (_, i, _): (usize, &'input str, usize),
+) -> String
+{
     String::from(i)
 }
 
-pub trait __ToTriple<'input> {
-    fn to_triple(
-        value: Self,
-    ) -> Result<
-        (usize, Token<'input>, usize),
-        __lalrpop_util::ParseError<usize, Token<'input>, &'static str>,
-    >;
+pub trait __ToTriple<'input, >
+{
+    fn to_triple(value: Self) -> Result<(usize,Token<'input>,usize), __lalrpop_util::ParseError<usize, Token<'input>, &'static str>>;
 }
 
-impl<'input> __ToTriple<'input> for (usize, Token<'input>, usize) {
-    fn to_triple(
-        value: Self,
-    ) -> Result<
-        (usize, Token<'input>, usize),
-        __lalrpop_util::ParseError<usize, Token<'input>, &'static str>,
-    > {
+impl<'input, > __ToTriple<'input, > for (usize, Token<'input>, usize)
+{
+    fn to_triple(value: Self) -> Result<(usize,Token<'input>,usize), __lalrpop_util::ParseError<usize, Token<'input>, &'static str>> {
         Ok(value)
     }
 }
-impl<'input> __ToTriple<'input> for Result<(usize, Token<'input>, usize), &'static str> {
-    fn to_triple(
-        value: Self,
-    ) -> Result<
-        (usize, Token<'input>, usize),
-        __lalrpop_util::ParseError<usize, Token<'input>, &'static str>,
-    > {
+impl<'input, > __ToTriple<'input, > for Result<(usize, Token<'input>, usize), &'static str>
+{
+    fn to_triple(value: Self) -> Result<(usize,Token<'input>,usize), __lalrpop_util::ParseError<usize, Token<'input>, &'static str>> {
         match value {
             Ok(v) => Ok(v),
             Err(error) => Err(__lalrpop_util::ParseError::User { error }),

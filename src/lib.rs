@@ -72,7 +72,12 @@ fn construct_robdd_from_parser_tree(
 
 #[test]
 fn construct_test() {
-    println!("{}", construct_robdd("q&q").unwrap().1);
+    println!(
+        "{}",
+        construct_robdd("!b")
+            .unwrap()
+            .1
+    );
 }
 
 fn rename_variable<From>(
@@ -209,7 +214,11 @@ where
                     operand.get_child(BinaryIndex::Left).unwrap(),
                     operand.get_child(BinaryIndex::Right).unwrap(),
                 );
-                diagram.add_node_if_necessary(var.clone(), (children.1, children.0))
+                let not_children = (
+                    apply_unary(diagram, children.0, operation),
+                    apply_unary(diagram, children.1, operation),
+                );
+                diagram.add_node_if_necessary(var.clone(), not_children)
             }
             Element::Binary(value) => match value {
                 true => BinaryDecisionDiagram::<T>::get_leaf(false),

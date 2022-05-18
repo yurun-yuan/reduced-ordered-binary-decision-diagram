@@ -4,7 +4,7 @@ use crate::unwrap;
 
 use super::{binary_index::*, BinaryDecisionDiagram, NodePtrMut};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct NodeHandler<T>(pub(super) super::Link<T>)
 where
     T: Clone;

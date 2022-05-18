@@ -80,11 +80,27 @@ where
             );
         }
         self.roots.insert(new_node);
-        if let NodeHandler(Link::Node(left)) = children.0 {
-            self.add_parent_for_node(left, new_node);
+        match children.0 {
+            NodeHandler(Link::Node(left)) => self.add_parent_for_node(left, new_node),
+            NodeHandler(Link::Leaf(value)) => match value {
+                true => {
+                    self.leaf_parents.1.insert(new_node);
+                }
+                false => {
+                    self.leaf_parents.0.insert(new_node);
+                }
+            },
         }
-        if let NodeHandler(Link::Node(right)) = children.1 {
-            self.add_parent_for_node(right, new_node);
+        match children.1 {
+            NodeHandler(Link::Node(right)) => self.add_parent_for_node(right, new_node),
+            NodeHandler(Link::Leaf(value)) => match value {
+                true => {
+                    self.leaf_parents.1.insert(new_node);
+                }
+                false => {
+                    self.leaf_parents.0.insert(new_node);
+                }
+            },
         }
         NodeHandler(Link::Node(new_node))
     }
@@ -103,16 +119,24 @@ where
     where
         T: Eq,
     {
+        // For node that has 2 same children
         if children.0 == children.1 {
             return children.0;
         }
         let common_parent_sets =
             HashSet::intersection(children.0.get_parents(self), children.1.get_parents(self));
+        let mut candidate = Vec::<NodeHandler<T>>::new();
         for node in common_parent_sets {
             let node = unsafe { &mut **node };
             if node.variable == variable {
-                return NodeHandler(Link::Node(node));
+                candidate.push(NodeHandler(Link::Node(node)));
             }
+        }
+        if candidate.len() > 1 {
+            panic!()
+        }
+        if candidate.len() == 1 {
+            return candidate.first().unwrap().clone();
         }
         self.add_node(variable, children)
     }
