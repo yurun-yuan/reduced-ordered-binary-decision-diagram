@@ -2,13 +2,13 @@ pub mod binary_index;
 pub mod node_handler;
 use std::collections::HashSet;
 
-use crate::{unwrap, utility::*};
+use crate::utility::*;
 pub use binary_index::*;
 pub use node_handler::*;
-use std::{ops::Deref, ptr};
 
 type NodePtrMut<T> = *mut Node<T>;
 
+#[allow(clippy::derive_hash_xor_eq)]
 #[derive(Clone, Copy, Hash, Debug, Eq)]
 enum Link<T>
 where
@@ -114,7 +114,7 @@ where
                 return NodeHandler(Link::Node(node));
             }
         }
-        return self.add_node(variable, children);
+        self.add_node(variable, children)
     }
 
     pub fn get_leaf(value: bool) -> NodeHandler<T> {

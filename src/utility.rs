@@ -1,9 +1,8 @@
-use crate::binary_decision_diagram::BinaryIndex;
-
 pub unsafe fn allocate<T>() -> *mut T {
     std::alloc::alloc(std::alloc::Layout::new::<T>()) as *mut T
 }
 
+#[allow(dead_code)]
 pub unsafe fn deallocate<T>(obj: *mut T) {
     std::alloc::dealloc(obj as *mut u8, std::alloc::Layout::new::<T>())
 }

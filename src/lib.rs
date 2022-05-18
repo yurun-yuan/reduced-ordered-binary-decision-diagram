@@ -1,8 +1,8 @@
-//! This project aims to generate a Reduced Ordered Binary Decision Diagram from a text-based PL formula. 
+//! This project aims to generate a Reduced Ordered Binary Decision Diagram from a text-based PL formula.
 
 mod binary_decision_diagram;
 mod utility;
-use std::{alloc::System, cmp::Ordering, collections::HashMap, hash::Hash};
+use std::{cmp::Ordering, collections::HashMap, hash::Hash};
 mod formula_parser;
 use binary_decision_diagram::*;
 use formula_parser::ParserNode;
@@ -26,15 +26,13 @@ pub enum UnaryOperation {
     Not,
 }
 
+pub type LexerError<'a> =
+    lalrpop_util::ParseError<usize, lalrpop_util::lexer::Token<'a>, &'static str>;
+pub use binary_decision_diagram::node_handler::FormulaRoot;
+
 pub fn construct_robdd<'a>(
     input: &'a str,
-) -> Result<
-    (
-        BinaryDecisionDiagram<usize>,
-        binary_decision_diagram::node_handler::FormulaRoot<String>,
-    ),
-    lalrpop_util::ParseError<usize, lalrpop_util::lexer::Token<'a>, &'static str>,
-> {
+) -> Result<(BinaryDecisionDiagram<usize>, FormulaRoot<String>), LexerError> {
     let mut diagram = BinaryDecisionDiagram::default();
     let mut inverse_table = vec![];
     let root = construct_robdd_from_parser_tree(
@@ -42,7 +40,6 @@ pub fn construct_robdd<'a>(
             &formula_parser::formula_parse(input)?,
             &mut HashMap::default(),
             &mut inverse_table,
-            (&"true".to_string(), &"false".to_string()),
         ),
         &mut diagram,
     );
@@ -59,13 +56,13 @@ fn construct_robdd_from_parser_tree(
     match input {
         ParserNode::Unary(op, operand) => match op {
             UnaryOperation::Not => {
-                let operand = construct_robdd_from_parser_tree(&operand, diagram);
+                let operand = construct_robdd_from_parser_tree(operand, diagram);
                 apply_unary(diagram, operand, *op)
             }
         },
         ParserNode::Binary(op, (left, right)) => {
-            let left = construct_robdd_from_parser_tree(&left, diagram);
-            let right = construct_robdd_from_parser_tree(&right, diagram);
+            let left = construct_robdd_from_parser_tree(left, diagram);
+            let right = construct_robdd_from_parser_tree(right, diagram);
             apply_binary(diagram, (left, right), *op)
         }
         ParserNode::Variable(var) => diagram.add_variable(*var),
@@ -75,14 +72,13 @@ fn construct_robdd_from_parser_tree(
 
 #[test]
 fn construct_test() {
-    println!("{}", construct_robdd("q&q").1);
+    println!("{}", construct_robdd("q&q").unwrap().1);
 }
 
 fn rename_variable<From>(
     input: &ParserNode<From>,
     symbol_table: &mut HashMap<From, usize>,
     inverse_table: &mut Vec<From>,
-    (t, f): (&From, &From),
 ) -> ParserNode<usize>
 where
     From: Eq + Hash + Clone,
@@ -90,22 +86,17 @@ where
     match input {
         ParserNode::Unary(op, operand) => ParserNode::Unary(
             *op,
-            Box::new(rename_variable(
-                operand,
-                symbol_table,
-                inverse_table,
-                (t, f),
-            )),
+            Box::new(rename_variable(operand, symbol_table, inverse_table)),
         ),
         ParserNode::Binary(op, (left, right)) => ParserNode::Binary(
             *op,
             (
-                Box::new(rename_variable(left, symbol_table, inverse_table, (t, f))),
-                Box::new(rename_variable(right, symbol_table, inverse_table, (t, f))),
+                Box::new(rename_variable(left, symbol_table, inverse_table)),
+                Box::new(rename_variable(right, symbol_table, inverse_table)),
             ),
         ),
         ParserNode::Variable(var) => {
-            if !symbol_table.contains_key(&var) {
+            if !symbol_table.contains_key(var) {
                 symbol_table.insert(var.clone(), inverse_table.len());
                 inverse_table.push(var.clone());
             }
@@ -177,10 +168,8 @@ where
             apply_binary(diagram, (t1, u1), operation),
             apply_binary(diagram, (t2, u2), operation),
         );
-        return diagram.add_node_if_necessary(
-            unwrap!(elements.0, Element::Variable(v), v.clone()),
-            new_children,
-        );
+        return diagram
+            .add_node_if_necessary(unwrap!(elements.0, Element::Variable(v), *v), new_children);
     }
 
     // Case 2: the smallest variable only appears on one side
@@ -201,7 +190,7 @@ where
     );
 
     return diagram.add_node_if_necessary(
-        unwrap!(smaller.get_element(), Element::Variable(v), v.clone()),
+        unwrap!(smaller.get_element(), Element::Variable(v), *v),
         new_children,
     );
 }
@@ -227,34 +216,5 @@ where
                 false => BinaryDecisionDiagram::<T>::get_leaf(true),
             },
         },
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    #[test]
-    fn basic_case() {
-        let mut diagram = BinaryDecisionDiagram::default();
-        let first = BinaryDecisionDiagram::<u32>::get_leaf(false);
-        let second = BinaryDecisionDiagram::<u32>::get_leaf(true);
-        println!(
-            "{:?}",
-            apply_binary(&mut diagram, (first, second), BinaryOperation::Implication)
-        );
-    }
-    #[test]
-    fn slide_example_test() {
-        let mut diagram = BinaryDecisionDiagram::<u32>::default();
-        let p = diagram.add_variable(1);
-        let q = diagram.add_variable(2);
-        let r = diagram.add_variable(3);
-        let r_or_q = apply_binary(&mut diagram, (r, p), BinaryOperation::Or);
-        let q_eq_r_or_q = apply_binary(&mut diagram, (q, r_or_q), BinaryOperation::Equivalence);
-        let p_impl_r = apply_binary(&mut diagram, (p, r), BinaryOperation::Implication);
-        // println!(
-        //     "{}",
-        //     apply_binary(&mut diagram, (p_impl_r, q_eq_r_or_q), BinaryOperation::And)
-        // )
     }
 }

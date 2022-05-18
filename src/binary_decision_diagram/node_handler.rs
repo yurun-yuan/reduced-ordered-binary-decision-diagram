@@ -1,7 +1,4 @@
-use std::{
-    collections::{HashMap, HashSet},
-    fmt::Display,
-};
+use std::{collections::HashMap, fmt::Display};
 
 use crate::unwrap;
 
@@ -87,19 +84,19 @@ where
         match node_handler.0 {
             super::Link::Node(node) => {
                 if visit_record.contains_key(&node) {
-                    return (visit_record[&node], false);
+                    (visit_record[&node], false)
                 } else {
                     let var_value =
                         unwrap!(node_handler.get_element(), Element::Variable(var), var);
                     let var = inverse_table.get(var_value).unwrap().to_string();
                     writeln!(f, "{index} [label=\"{var}\"]").unwrap();
-                    let node_index = index.clone();
+                    let node_index = *index;
                     visit_record.insert(node, node_index);
                     *index += 1;
-                    return (node_index, true);
+                    (node_index, true)
                 }
             }
-            super::Link::Leaf(value) => return (value as u32, false),
+            super::Link::Leaf(value) => (value as u32, false),
         }
     }
 
@@ -130,9 +127,9 @@ where
         visit_record: &mut HashMap<NodePtrMut<usize>, u32>,
     ) -> std::fmt::Result {
         match node_handler.get_element() {
-            Element::Variable(var) => {
+            Element::Variable(_) => {
                 let (parent_index, _) =
-                    Self::get_index(&node_handler, inverse_table, f, index, visit_record);
+                    Self::get_index(node_handler, inverse_table, f, index, visit_record);
                 let ((left_index, left_recursive_flag), (right_index, right_recursive_flag)) = (
                     Self::get_index(
                         &node_handler.get_child(BinaryIndex::Left).unwrap(),
@@ -171,7 +168,7 @@ where
                 }
                 Ok(())
             }
-            Element::Binary(value) => Ok(()),
+            Element::Binary(_) => Ok(()),
         }
     }
 }
