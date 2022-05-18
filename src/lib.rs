@@ -1,3 +1,5 @@
+//! This project aims to generate a Reduced Ordered Binary Decision Diagram from a text-based PL formula. 
+
 mod binary_decision_diagram;
 mod utility;
 use std::{alloc::System, cmp::Ordering, collections::HashMap, hash::Hash};
@@ -24,27 +26,30 @@ pub enum UnaryOperation {
     Not,
 }
 
-fn construct_robdd(
-    input: &str,
-) -> (
-    BinaryDecisionDiagram<usize>,
-    binary_decision_diagram::node_handler::FormulaRoot<String>,
-) {
+pub fn construct_robdd<'a>(
+    input: &'a str,
+) -> Result<
+    (
+        BinaryDecisionDiagram<usize>,
+        binary_decision_diagram::node_handler::FormulaRoot<String>,
+    ),
+    lalrpop_util::ParseError<usize, lalrpop_util::lexer::Token<'a>, &'static str>,
+> {
     let mut diagram = BinaryDecisionDiagram::default();
     let mut inverse_table = vec![];
     let root = construct_robdd_from_parser_tree(
         &rename_variable(
-            &formula_parser::formula_parse(input).unwrap(),
+            &formula_parser::formula_parse(input)?,
             &mut HashMap::default(),
             &mut inverse_table,
             (&"true".to_string(), &"false".to_string()),
         ),
         &mut diagram,
     );
-    (
+    Ok((
         diagram,
         FormulaRoot::new(root, inverse_table.into_iter().enumerate().collect()),
-    )
+    ))
 }
 
 fn construct_robdd_from_parser_tree(
