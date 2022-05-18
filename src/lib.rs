@@ -1,19 +1,113 @@
 mod binary_decision_diagram;
 mod utility;
-use std::cmp::Ordering;
-
+use std::{alloc::System, cmp::Ordering, collections::HashMap, hash::Hash};
+mod formula_parser;
 use binary_decision_diagram::*;
+use formula_parser::ParserNode;
 
 #[derive(Clone, Copy)]
-enum BinaryOperation {
+pub enum Operation {
+    Binary(BinaryOperation),
+    Unary(UnaryOperation),
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum BinaryOperation {
     And,
     Or,
     Implication,
     Equivalence,
 }
 
-enum UnaryOperation {
+#[derive(Clone, Copy, Debug)]
+pub enum UnaryOperation {
     Not,
+}
+
+fn construct_robdd(
+    input: &str,
+) -> (
+    BinaryDecisionDiagram<usize>,
+    binary_decision_diagram::node_handler::FormulaRoot<String>,
+) {
+    let mut diagram = BinaryDecisionDiagram::default();
+    let mut inverse_table = vec![];
+    let root = construct_robdd_from_parser_tree(
+        &rename_variable(
+            &formula_parser::formula_parse(input).unwrap(),
+            &mut HashMap::default(),
+            &mut inverse_table,
+            (&"true".to_string(), &"false".to_string()),
+        ),
+        &mut diagram,
+    );
+    (
+        diagram,
+        FormulaRoot::new(root, inverse_table.into_iter().enumerate().collect()),
+    )
+}
+
+fn construct_robdd_from_parser_tree(
+    input: &ParserNode<usize>,
+    diagram: &mut BinaryDecisionDiagram<usize>,
+) -> NodeHandler<usize> {
+    match input {
+        ParserNode::Unary(op, operand) => match op {
+            UnaryOperation::Not => {
+                let operand = construct_robdd_from_parser_tree(&operand, diagram);
+                apply_unary(diagram, operand, *op)
+            }
+        },
+        ParserNode::Binary(op, (left, right)) => {
+            let left = construct_robdd_from_parser_tree(&left, diagram);
+            let right = construct_robdd_from_parser_tree(&right, diagram);
+            apply_binary(diagram, (left, right), *op)
+        }
+        ParserNode::Variable(var) => diagram.add_variable(*var),
+        ParserNode::Leaf(value) => BinaryDecisionDiagram::get_leaf(*value),
+    }
+}
+
+#[test]
+fn construct_test() {
+    println!("{}", construct_robdd("q&q").1);
+}
+
+fn rename_variable<From>(
+    input: &ParserNode<From>,
+    symbol_table: &mut HashMap<From, usize>,
+    inverse_table: &mut Vec<From>,
+    (t, f): (&From, &From),
+) -> ParserNode<usize>
+where
+    From: Eq + Hash + Clone,
+{
+    match input {
+        ParserNode::Unary(op, operand) => ParserNode::Unary(
+            *op,
+            Box::new(rename_variable(
+                operand,
+                symbol_table,
+                inverse_table,
+                (t, f),
+            )),
+        ),
+        ParserNode::Binary(op, (left, right)) => ParserNode::Binary(
+            *op,
+            (
+                Box::new(rename_variable(left, symbol_table, inverse_table, (t, f))),
+                Box::new(rename_variable(right, symbol_table, inverse_table, (t, f))),
+            ),
+        ),
+        ParserNode::Variable(var) => {
+            if !symbol_table.contains_key(&var) {
+                symbol_table.insert(var.clone(), inverse_table.len());
+                inverse_table.push(var.clone());
+            }
+            ParserNode::Variable(symbol_table[var])
+        }
+        ParserNode::Leaf(value) => ParserNode::Leaf(*value),
+    }
 }
 
 fn apply_binary<T>(
@@ -153,9 +247,9 @@ mod test {
         let r_or_q = apply_binary(&mut diagram, (r, p), BinaryOperation::Or);
         let q_eq_r_or_q = apply_binary(&mut diagram, (q, r_or_q), BinaryOperation::Equivalence);
         let p_impl_r = apply_binary(&mut diagram, (p, r), BinaryOperation::Implication);
-        println!(
-            "{}",
-            apply_binary(&mut diagram, (p_impl_r, q_eq_r_or_q), BinaryOperation::And)
-        )
+        // println!(
+        //     "{}",
+        //     apply_binary(&mut diagram, (p_impl_r, q_eq_r_or_q), BinaryOperation::And)
+        // )
     }
 }

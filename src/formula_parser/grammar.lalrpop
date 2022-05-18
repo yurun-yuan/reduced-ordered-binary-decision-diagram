@@ -1,0 +1,43 @@
+use crate::formula_parser::*;
+
+grammar;
+
+pub Formula: ParserNode<String> = {
+    ImplAndEquivSubExpr,
+}
+
+ImplAndEquivSubExpr: ParserNode<String> = {
+    <l: ImplAndEquivSubExpr> "->" <r: OrSubExpr> => ParserNode::Binary(BinaryOperation::Implication, (Box::new(l), Box::new(r))),
+    <l: ImplAndEquivSubExpr> "<->" <r: OrSubExpr> => ParserNode::Binary(BinaryOperation::Equivalence, (Box::new(l), Box::new(r))),
+    OrSubExpr,
+}
+
+OrSubExpr: ParserNode<String> = {
+    <l: OrSubExpr> "|" <r: AndSubExpr> => ParserNode::Binary(BinaryOperation::Or, (Box::new(l), Box::new(r))),
+    AndSubExpr,
+}
+
+AndSubExpr: ParserNode<String> = {
+    <l: AndSubExpr> "&" <r: NotSubExpr> => ParserNode::Binary(BinaryOperation::And, (Box::new(l), Box::new(r))),
+    NotSubExpr,
+}
+
+NotSubExpr: ParserNode<String> = {
+    "!" <operand: NotSubExpr> => ParserNode::Unary(UnaryOperation::Not, Box::new(operand)),
+    Term, 
+}
+
+Term: ParserNode<String> = {
+    <i: Indent> => ParserNode::Variable(i),
+    Constant,
+    "(" <f: Formula> ")" => f,
+}
+
+Constant: ParserNode<String> = {
+    <t: "T"> => ParserNode::Leaf(true),
+    <f: "F"> => ParserNode::Leaf(false),
+}
+
+Indent: String = {
+    <i: r"[a-zA-Z]+"> => String::from(i),
+}
