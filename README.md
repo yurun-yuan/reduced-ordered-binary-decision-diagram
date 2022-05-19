@@ -2,6 +2,8 @@
 
 Author: 袁玉润
 
+> NOTE: see `README.pdf` for a better view of this document. 
+
 ## Introduction
 
 This project is intended to parse the input propositional logic formula and generate the corresponding Reduced Ordered Binary Decision Diagram(ROBDD). 
@@ -113,7 +115,7 @@ To visualize the diagram, paste the output to [Viz.js (viz-js.com)](http://viz-j
 
 ## Implementation
 
-In this section, I would elucidate how I realize this ROBDD generator. 
+In this section, I would elucidate how I realized this ROBDD generator. 
 
 ### Data Structure: A Reduced Binary Tree
 
@@ -220,7 +222,37 @@ Function `apply()`  constructs a new formula based on the given operator and exi
 
 The order of variables is automatically determined by the program. It uses a simple strategy: the variable appearing earlier in the formula has a higher priority, and therefore appears closer to the root in the BDD. 
 
-### Miscellaneous
+## Code Structure
+
+All the source files are located in `src/`. 
+
+```bash
+src/
+├── bin
+│   └── command_line_interface.rs
+├── binary_decision_diagram
+│   ├── binary_index.rs
+│   ├── mod.rs
+│   └── node_handler.rs
+├── formula_parser
+│   ├── grammar.lalrpop
+│   ├── grammar.rs
+│   └── mod.rs
+├── lib.rs
+└── utility.rs
+```
+
+1. `binary_decision_diagram`
+
+   Implementation of the data structure `BinaryDecisionDiagram`, which represent the reduced binary tree. 
+
+2. `lib.rs`
+
+   Implementation of the core algorithms, including `apply_binary`, `apply_unary`, mapping the variable names to numeric indices, constructing ROBDD from the parse tree. 
+
+3. `formula_parser`
+
+   Construct a parse tree from the input string. 
 
 ## Acknowledgement
 
