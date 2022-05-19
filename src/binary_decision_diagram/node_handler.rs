@@ -2,7 +2,10 @@ use std::{collections::HashMap, fmt::Display};
 
 use crate::unwrap;
 
-use super::{binary_index::*, BinaryDecisionDiagram, NodePtrMut};
+use super::{
+    binary_index::{self, *},
+    BinaryDecisionDiagram, NodePtrMut,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct NodeHandler<T>(pub(super) super::Link<T>)
@@ -38,12 +41,22 @@ where
     pub(super) fn get_parents<'a>(
         &self,
         diagram: &'a BinaryDecisionDiagram<T>,
+        binary_index: BinaryIndex,
     ) -> &'a std::collections::HashSet<NodePtrMut<T>> {
-        match self.0 {
-            super::Link::Node(node) => &unsafe { &mut *node }.parents,
-            super::Link::Leaf(value) => match value {
-                true => &diagram.leaf_parents.1,
-                false => &diagram.leaf_parents.0,
+        match binary_index {
+            BinaryIndex::Left => match self.0 {
+                super::Link::Node(node) => &unsafe { &mut *node }.parents.0,
+                super::Link::Leaf(value) => match value {
+                    true => &diagram.leaf_parents.1 .0,
+                    false => &diagram.leaf_parents.0 .0,
+                },
+            },
+            BinaryIndex::Right => match self.0 {
+                super::Link::Node(node) => &unsafe { &mut *node }.parents.1,
+                super::Link::Leaf(value) => match value {
+                    true => &diagram.leaf_parents.1 .1,
+                    false => &diagram.leaf_parents.0 .1,
+                },
             },
         }
     }

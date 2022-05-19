@@ -74,7 +74,7 @@ fn construct_robdd_from_parser_tree(
 fn construct_test() {
     println!(
         "{}",
-        construct_robdd("!b")
+        construct_robdd("(!x1 | x2) & (x1 | !x3) & (!x1 | !x2 | x3)")
             .unwrap()
             .1
     );

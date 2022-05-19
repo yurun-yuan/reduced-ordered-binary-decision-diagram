@@ -37,7 +37,9 @@ where
 {
     variable: T,
     links: (Link<T>, Link<T>),
-    parents: HashSet<NodePtrMut<T>>,
+
+    // (self as the left child of, self as the right child of)
+    parents: (HashSet<NodePtrMut<T>>, HashSet<NodePtrMut<T>>),
 }
 
 #[derive(Debug, Default)]
@@ -46,7 +48,12 @@ where
     T: Clone,
 {
     roots: HashSet<NodePtrMut<T>>, // Maybe just for destruction use
-    leaf_parents: (HashSet<NodePtrMut<T>>, HashSet<NodePtrMut<T>>),
+
+    // (
+    //     (`false` as left child of, `false` as right child of), 
+    //     (`true` as left child of,  `true` as right child of)
+    // )
+    leaf_parents: ((HashSet<NodePtrMut<T>>, HashSet<NodePtrMut<T>>), (HashSet<NodePtrMut<T>>, HashSet<NodePtrMut<T>>)),
 }
 
 // For basic operations
@@ -54,13 +61,25 @@ impl<T> BinaryDecisionDiagram<T>
 where
     T: Clone,
 {
-    fn add_parent_for_node(&mut self, node: NodePtrMut<T>, parent: *const Node<T>) {
+    fn add_parent_for_node(
+        &mut self,
+        node: NodePtrMut<T>,
+        parent: *const Node<T>,
+        binary_index: BinaryIndex,
+    ) {
         if self.roots.contains(&node) {
             self.roots.remove(&node);
         }
-        unsafe { &mut *node }
-            .parents
-            .insert(parent as NodePtrMut<T>);
+        match binary_index {
+            BinaryIndex::Left => unsafe { &mut *node }
+                .parents
+                .0
+                .insert(parent as NodePtrMut<T>),
+            BinaryIndex::Right => unsafe { &mut *node }
+                .parents
+                .1
+                .insert(parent as NodePtrMut<T>),
+        };
     }
 
     fn add_node(
@@ -75,30 +94,30 @@ where
                 Node {
                     variable,
                     links: (children.0 .0.clone(), children.1 .0.clone()),
-                    parents: HashSet::default(),
+                    parents: (HashSet::default(), HashSet::default()),
                 },
             );
         }
         self.roots.insert(new_node);
         match children.0 {
-            NodeHandler(Link::Node(left)) => self.add_parent_for_node(left, new_node),
+            NodeHandler(Link::Node(left)) => self.add_parent_for_node(left, new_node, BinaryIndex::Left),
             NodeHandler(Link::Leaf(value)) => match value {
                 true => {
-                    self.leaf_parents.1.insert(new_node);
+                    self.leaf_parents.1.0.insert(new_node);
                 }
                 false => {
-                    self.leaf_parents.0.insert(new_node);
+                    self.leaf_parents.0.0.insert(new_node);
                 }
             },
         }
         match children.1 {
-            NodeHandler(Link::Node(right)) => self.add_parent_for_node(right, new_node),
+            NodeHandler(Link::Node(right)) => self.add_parent_for_node(right, new_node, BinaryIndex::Right),
             NodeHandler(Link::Leaf(value)) => match value {
                 true => {
-                    self.leaf_parents.1.insert(new_node);
+                    self.leaf_parents.1.1.insert(new_node);
                 }
                 false => {
-                    self.leaf_parents.0.insert(new_node);
+                    self.leaf_parents.0.1.insert(new_node);
                 }
             },
         }
@@ -124,7 +143,7 @@ where
             return children.0;
         }
         let common_parent_sets =
-            HashSet::intersection(children.0.get_parents(self), children.1.get_parents(self));
+            HashSet::intersection(children.0.get_parents(self, BinaryIndex::Left), children.1.get_parents(self, BinaryIndex::Right));
         let mut candidate = Vec::<NodeHandler<T>>::new();
         for node in common_parent_sets {
             let node = unsafe { &mut **node };

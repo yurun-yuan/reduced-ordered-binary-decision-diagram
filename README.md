@@ -9,6 +9,7 @@ This project is intended to parse the input propositional logic formula and gene
 For instance, the input formula $(p\rightarrow r)\wedge (q \leftrightarrow (r \vee p))$ would lead to the following output
 
 ```DOT
+(p -> r) & (q <-> (r | p))
 digraph{
     0 [label="false"]
     1 [label="true"]
@@ -32,7 +33,7 @@ digraph{
 
 which is [DOT](http://www.graphviz.org/doc/info/lang.html) code. To visualize the diagram, one choice is to paste the generated code to [Viz.js (viz-js.com)](http://viz-js.com/). The example show above would generate the following graph
 
-![](README.assets/intro-example.svg)
+<img src="README.assets/intro-example.svg" style="zoom:50%;" />
 
 ### The Formula Grammar
 
@@ -49,7 +50,7 @@ Parentheses `(`, `)` can be used to alter the priority of the subexpressions.
 
 #### Variables and Constants
 
-The identifier of the variables should **consist of case-sensitive alphabetic characters** (`[a-zA-Z]+`). 
+The identifier of the variables should **consist of case-sensitive alphabetic characters and digits** (`[a-zA-Z0-9]+`). 
 
 2 names are reserved: `T` for true and `F` for false. 
 
@@ -57,11 +58,11 @@ For instance:
 
 1. `T -> F`
 
-   ![](README.assets/intro-grammar-t_impl_f.svg)
+   <img src="README.assets/intro-grammar-t_impl_f.svg" style="zoom:50%;" />
 
 2. `p -> F`
 
-   ![](README.assets/intro-grammar-p_impl_f.svg)
+   <img src="README.assets/intro-grammar-p_impl_f.svg" style="zoom:50%;" />
 
 ## Build
 
@@ -80,32 +81,147 @@ The released `x86_linux-gnu` binary is located at `bin/command_line_interface`.
 
 After executing the program, input the propositional logic formula and then hit `Enter`. 
 
-<img src="README.assets/image-20220518163502440.png" alt="image-20220518163502440" style="zoom: 80%;" />
+<img src="README.assets/image-20220518163502440.png" alt="image-20220518163502440" style="zoom: 67%;" />
 
+To visualize the diagram, paste the output to [Viz.js (viz-js.com)](http://viz-js.com/): 
 
+<img src="README.assets/image-20220518223353896.png" alt="image-20220518223353896" style="zoom: 33%;" />
 
 ## Examples & Tests
 
 1. `F`
 
-   <img src="README.assets/image-20220518192922547.png" alt="image-20220518192922547" style="zoom: 80%;" />
+   <img src="README.assets/image-20220518192922547.png" alt="image-20220518192922547" style="zoom: 67%;" />
 
 2. `variable`
 
-   <img src="README.assets/image-20220518193118533.png" alt="image-20220518193118533" style="zoom:80%;" />
+   <img src="README.assets/image-20220518193118533.png" alt="image-20220518193118533" style="zoom: 67%;" />
 
-   ![](README.assets/single-var.svg)
+   <img src="README.assets/single-var.svg" style="zoom: 50%;" />
 
-3. `(x1 | !x3) & (!x1 | x2) & (!x1 | !x2 | x3)`
+3. `(!x1 | x2) & (x1 | !x3) & (!x1 | !x2 | x3)`
 
-   ![](README.assets/complex1.svg)
+   <img src="README.assets/complex1.svg" style="zoom:50%;" />
 
 4. `x1 & x2 | x3 & x4 | x5 & x6 | x7 & x8`
 
-   <img src="README.assets/complex2.svg" style="zoom:67%;" />
+   <img src="README.assets/complex2.svg" style="zoom: 50%;" />
 
 5. `a & b & c | !b & d | !c & d`
 
-   ![](README.assets/complex3.svg)
+   <img src="README.assets/complex3.svg" style="zoom:50%;" />
+
+## Implementation
+
+In this section, I would elucidate how I realize this ROBDD generator. 
+
+### Data Structure: A Reduced Binary Tree
+
+The structure of the primary date structure, that is, the one used to represent the BDD, is virtually the same as the diagrams shown above: each node has exactly 2 children and any number of parents; each node can represent a propositional logic formula. 
+
+The nodes can never be duplicate since any addition of node to the graph would be check. This would be further discussed in [Merge and Elimination](#Merge and Elimination). 
+
+#### Inside a Node
+
+The data structure maintains several field for each node: 
+
+1. The left and right child of the node
+
+2. The value of the node, i.e, what the node represents
+
+   This can be either a variable or a Boolean constant. 
+
+3. The parents of this node
+
+   A node would maintain 2 sets of parents. One for the parents of which the node is the left child of, and one for the right. This field is primarily used for [merge and elimination](#Merge and Elimination). 
+
+   ![](README.assets/2_sets_of_parents.drawio.svg)
+
+#### Merge and Elimination
+
+Every time a node is about to be added to the tree, duplication detection would be performed to eliminate duplicate/useless node. 
+
+Let $n.val$ denote the variable that the new node $n$ represents, $n.\text{left}$ and $n.\text{right}$ denote the existing left and right child of the new node. The method `add_node_checked(n.value, n.left, n.right)` would either find an existing eligible node or add a new node to the tree and returns a pointer to it. 
+
+1. Eliminate redundant tests
+
+   If $n.\text{left}=n.\text{right}$, simply returns the child. 
+
+2. Merge equivalent leaves
+
+   There are only 2 leaves in the tree: one for `true` and one for `false`. 
+
+3. Merge isomorphic nodes
+
+   node $x$ and node $y$ are isomorphic if and only if
+
+   1. $x.left=y.left$, and
+   2. $x.right=y.right$, and
+   3. $x.value=y.value$
+
+   To efficiently determine if there is an existing node isomorphic to $n$, the program utilize the data field `parents` of the children, searches among $n.\text{left}.\text{rightParents }\bigcap n.\text{right}.\text{leftParents}$ for a node that has the same value as the new node. 
+
+### Algorithm
+
+The algorithm works in a recursive approach. It traverses the parse tree in depth-first order and employee function `apply()` on each operator node with its subtrees. 
+
+The pseudo code is as follows: 
+
+```c
+BDD_node construct_ROBDD(parse_tree_node){
+    if (parse_tree_node is a constant) { 		    	// `T` or `F`
+        return BDD::get_leaf(constant);
+    }else if (parse_tree_node is a variable){	    	// variable like `p`, `q`
+        return BDD::add_variable(name);			    	// a single-variable formula
+    }else if (parse_tree_node is a binary operator){	// `And`, `Or`, `Implication`, `Equivalence`
+        BDD_node left_subtree = construct_ROBDD(parse_tree_node.left);
+        BDD_node right_subtree = construct_ROBDD(parse_tree_node.right);
+        return apply_binary(op, left_subtree, right_subtree);
+    }else{												// unary operator `Not`
+        BDD_node subtree = construct_ROBDD(parse_tree_node.child);
+        return apply_binary(op, subtree);
+    }
+}
+```
+
+Line 2-5 handles the basic case where the node is a constant or variable. Line 6-12 invokes `apply` on the operator node depending on whether the operator is a binary one or a unary one. 
+
+#### `apply`
+
+Function `apply()`  constructs a new formula based on the given operator and existing operands. 
+
+##### `apply_binary(op, left, right)`
+
+1. Basic case
+
+   If either `left` or `right` is a constant, the new formula is a constant or determined by the other operand. 
+
+   e.g, `apply_binary(And, false, right) = false`, `apply_binary(Or, false, right) = right`
+
+2. If left and right have the same *smallest* variable, apply `op` on the grandchildren and add a new node with obtained children. 
+
+   ![image-20220519082313042](README.assets/image-20220519082313042.png)
+
+3. If the smallest variables appears on only one side, apply `op` on the grandchildren and children and add a new node with obtained children. 
+
+   ![image-20220519082434047](README.assets/image-20220519082434047.png)
+
+##### `apply_unary(op=Not, node)`
+
+1. Basic case
+
+   If `node` is a constant, returns the negation of it. 
+
+2. otherwise, `node` is a variable. Obtain the negation of its children by `apply_unary(op, node.left)`, `apply_unary(op, node.right)` and add a new node with obtained children. 
+
+   ![](README.assets/not.svg)
+
+#### Variable Ordering
+
+The order of variables is automatically determined by the program. It uses a simple strategy: the variable appearing earlier in the formula has a higher priority, and therefore appears closer to the root in the BDD. 
+
+### Miscellaneous
 
 ## Acknowledgement
+
+[Course slide 5.2](http://staff.ustc.edu.cn/~huangwc/fm/5.2.pdf)
